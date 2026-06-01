@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMRC Self Assessment – Tax Return Form</title>
+    <style>
+        :root {
+            --hmrc-green:      #00703C;
+            --hmrc-green-dark: #005a30;
+            --hmrc-dark:       #0B0C0C;
+            --hmrc-blue:       #1D70B8;
+            --hmrc-grey:       #f3f2f1;
+            --hmrc-mid-grey:   #b1b4b6;
+            --hmrc-yellow:     #ffdd00;
+            --hmrc-red:        #d4351c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: var(--hmrc-dark);
+            background: var(--hmrc-grey);
+            line-height: 1.5;
+        }
+
+        /* ── Header ── */
+        .hmrc-header {
+            background: var(--hmrc-green);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .hmrc-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .hmrc-header-brand img {
+            height: 40px;
+        }
+        .hmrc-header-brand span {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 0.3px;
+        }
+        .live-badge {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            background: #00e676;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .header-bar { background: var(--hmrc-dark); height: 10px; }
+
+        .phase-banner {
+            background: white;
+            border-bottom: 1px solid var(--hmrc-mid-grey);
+            padding: 8px 24px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .phase-tag {
+            background: var(--hmrc-blue);
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 3px 8px;
+            letter-spacing: 1px;
+        }
+
+        /* ── Layout ── */
+        .main-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 24px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 28px;
+        }
+
+        /* ── Form panel ── */
+        .form-panel {
+            background: white;
+            border: 1px solid var(--hmrc-mid-grey);
+        }
+        .form-panel-header {
+            background: var(--hmrc-green);
+            color: white;
+            padding: 22px 28px;
+        }
+        .form-panel-header h1 { font-size: 22px; margin-bottom: 6px; }
+        .form-panel-header p  { font-size: 14px; opacity: 0.88; line-height: 1.6; }
+        .tax-year-badge {
+            display: inline-block;
+            background: var(--hmrc-yellow);
+            color: var(--hmrc-dark);
+            font-weight: bold;
+            font-size: 13px;
+            padding: 3px 12px;
+            margin-top: 10px;
+        }
+
+        /* ── Sections ── */
+        .form-section { border-bottom: 2px solid var(--hmrc-grey); }
+        .section-header {
+            background: var(--hmrc-grey);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-num {
+            width: 28px; height: 28px;
+            background: var(--hmrc-green);
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold; flex-shrink: 0;
+        }
+        .section-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 2px;
+        }
+        .badge-pending  { background:#f3f2f1; color:#505a5f; border:1px solid #b1b4b6; }
+        .badge-active   { background:#fff7bf; color:#594d00; border:1px solid #ffdd00; animation:blink 1.5s infinite; }
+        .badge-complete { background:#cce2d8; color:#005a30; border:1px solid #005a30; }
+
+        .section-body { padding: 20px 28px 24px; }
+
+        /* ── Fields ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .field-group { margin-bottom: 18px; }
+        .field-row .field-group { margin-bottom: 0; }
+        .field-label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .field-hint {
+            display: block;
+            font-size: 13px;
+            color: #505a5f;
+            margin-bottom: 5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #0b0c0c;
+            font-size: 15px;
+            font-family: inherit;
+            background: white;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .form-input:focus {
+            outline: 3px solid var(--hmrc-yellow);
+            outline-offset: 0;
+        }
+        .form-input.populated {
+            background: #e8f5ee;
+            border-color: var(--hmrc-green);
+        }
+        .currency-wrap { position: relative; }
+        .currency-sym {
+            position: absolute; left: 10px; top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold; color: #505a5f; pointer-events: none;
+        }
+        .currency-wrap .form-input { padding-left: 26px; }
+
+        /* ── Declaration ── */
+        .declaration-box {
+            background: #fff7bf;
+            border: 2px solid var(--hmrc-yellow);
+            padding: 22px 28px;
+        }
+        .declaration-box h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .declaration-box p {
+            font-size: 14px;
+            color: #3d3d3d;
+            margin-bottom: 18px;
+            line-height: 1.7;
+        }
+        .sig-label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 6px; }
+        .sig-canvas {
+            width: 100%; height: 120px;
+            border: 2px solid var(--hmrc-dark);
+            background: white;
+            cursor: crosshair;
+            display: block;
+            touch-action: none;
+        }
+        .sig-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-clear {
+            background: white;
+            border: 2px solid var(--hmrc-dark);
+            padding: 8px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-submit {
+            flex: 1;
+            background: var(--hmrc-green);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-submit:hover { background: var(--hmrc-green-dark); }
+
+        /* ── Right panel ── */
+        .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+        .widget-card {
+            background: white;
+            border: 1px solid var(--hmrc-mid-grey);
+            overflow: hidden;
+        }
+        .widget-header {
+            padding: 12px 16px;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+        }
+        .widget-body { padding: 18px 16px; }
+
+        /* Call card */
+        .call-header-bg { background: var(--hmrc-dark); }
+        .call-icon { font-size: 38px; text-align: center; margin-bottom: 12px; }
+        .call-body-text { font-size: 14px; color: #505a5f; margin-bottom: 16px; text-align: center; }
+        .btn-call {
+            width: 100%;
+            background: var(--hmrc-green);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        .btn-call:hover { background: var(--hmrc-green-dark); }
+        .btn-call:disabled { background: #b1b4b6; cursor: not-allowed; }
+        .call-status-box {
+            margin-top: 10px;
+            background: var(--hmrc-grey);
+            padding: 8px 10px;
+            font-size: 13px;
+            color: #505a5f;
+            min-height: 36px;
+        }
+
+        /* Progress card */
+        .progress-header-bg { background: var(--hmrc-blue); }
+        .progress-list { list-style: none; }
+        .progress-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--hmrc-grey);
+            font-size: 14px;
+        }
+        .progress-item:last-child { border-bottom: none; }
+        .p-icon {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; flex-shrink: 0;
+        }
+        .p-icon-pending  { background: #f3f2f1; border: 2px solid #b1b4b6; color: #b1b4b6; }
+        .p-icon-active   { background: #fff7bf; border: 2px solid #ffdd00; color: #594d00; animation:blink 1.5s infinite; }
+        .p-icon-done     { background: var(--hmrc-green); border: 2px solid var(--hmrc-green); color: white; }
+
+        /* Info box */
+        .info-box {
+            background: #e8f5ee;
+            border-left: 4px solid var(--hmrc-green);
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #005a30;
+        }
+
+        /* Footer */
+        .govuk-footer {
+            background: var(--hmrc-dark);
+            color: #b1b4b6;
+            padding: 24px;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .govuk-footer p + p { margin-top: 6px; }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .main-container { grid-template-columns: 1fr; }
+            .field-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header class="hmrc-header">
+    <div class="hmrc-header-brand">
+        <!-- Replace the src below with your actual HMRC logo URL -->
+        <img src="https://YOUR_HMRC_LOGO_URL_HERE"
+             alt="HM Revenue &amp; Customs"
+             onerror="this.style.display='none'">
+        <span>HM Revenue &amp; Customs</span>
+    </div>
+    <div class="live-badge" id="liveBadge">
+        <span class="live-dot"></span>LIVE
+    </div>
+</header>
+<div class="header-bar"></div>
+<div class="phase-banner">
+    <span class="phase-tag">DEMO</span>
+    <span>This is a demonstration service — do not submit real personal data.</span>
+</div>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<div class="main-container">
+
+    <!-- ─── LEFT: Tax Return Form ─── -->
+    <div>
+        <div class="form-panel">
+
+            <!-- Form header -->
+            <div class="form-panel-header">
+                <h1>Self Assessment Tax Return</h1>
+                <p>This form is being completed with the assistance of an HMRC Self Assessment advisor over the phone.
+                   Each section will populate automatically as your information is confirmed during the call.</p>
+                <span class="tax-year-badge" id="taxYearBadge">Tax Year: —</span>
+            </div>
+
+            <!-- ── Section 1: Personal Details ── -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-num">1</span>
+                        Personal Details
+                    </div>
+                    <span class="section-badge badge-pending" id="badge-personal">Awaiting</span>
+                </div>
+                <div class="section-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="fullName">Full Name</label>
+                            <input type="text" id="fullName" class="form-input" placeholder="As registered with HMRC" readonly>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="niNumber">National Insurance Number</label>
+                            <span class="field-hint">Format: AB123456C</span>
+                            <input type="text" id="niNumber" class="form-input" placeholder="e.g. AB123456C" readonly>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="utr">Unique Taxpayer Reference (UTR)</label>
+                            <span class="field-hint">10-digit number from your SA notice</span>
+                            <input type="text" id="utr" class="form-input" placeholder="10-digit UTR" readonly>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="dateOfBirth">Date of Birth</label>
+                            <input type="text" id="dateOfBirth" class="form-input" placeholder="DD/MM/YYYY" readonly>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="address">Home Address</label>
+                        <input type="text" id="address" class="form-input" placeholder="House number/name, street, city, postcode" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 2: Employment Income ── -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-num">2</span>
+                        Employment Income
+                    </div>
+                    <span class="section-badge badge-pending" id="badge-employment">Awaiting</span>
+                </div>
+                <div class="section-body">
+                    <div class="field-group">
+                        <label class="field-label" for="employerName">Employer Name</label>
+                        <input type="text" id="employerName" class="form-input" placeholder="Your employer's registered name" readonly>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="annualSalary">Gross Annual Salary</label>
+                            <span class="field-hint">Before tax and National Insurance</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="annualSalary" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="payeTax">PAYE Tax Deducted</label>
+                            <span class="field-hint">From your P60 or P45</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="payeTax" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 3: Other Income ── -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-num">3</span>
+                        Other Income
+                    </div>
+                    <span class="section-badge badge-pending" id="badge-other">Awaiting</span>
+                </div>
+                <div class="section-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="rentalIncome">Rental Income</label>
+                            <span class="field-hint">Annual total from property lettings</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="rentalIncome" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="bankInterest">Bank / Building Society Interest</label>
+                            <span class="field-hint">Total interest received before tax</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="bankInterest" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-group" style="max-width:50%;">
+                        <label class="field-label" for="dividendIncome">Dividend Income</label>
+                        <span class="field-hint">Total dividends received in the tax year</span>
+                        <div class="currency-wrap">
+                            <span class="currency-sym">£</span>
+                            <input type="text" id="dividendIncome" class="form-input" placeholder="0.00" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 4: Reliefs & Deductions ── -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-num">4</span>
+                        Reliefs &amp; Deductions
+                    </div>
+                    <span class="section-badge badge-pending" id="badge-reliefs">Awaiting</span>
+                </div>
+                <div class="section-body">
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="giftAid">Gift Aid Donations</label>
+                            <span class="field-hint">Total donations under Gift Aid</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="giftAid" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="pensionContribs">Pension Contributions</label>
+                            <span class="field-hint">Personal contributions (not employer)</span>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="pensionContribs" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="otherDeductions">Other Deductions</label>
+                            <div class="currency-wrap">
+                                <span class="currency-sym">£</span>
+                                <input type="text" id="otherDeductions" class="form-input" placeholder="0.00" readonly>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="otherDeductionsDesc">Description</label>
+                            <span class="field-hint">e.g. professional subscriptions</span>
+                            <input type="text" id="otherDeductionsDesc" class="form-input" placeholder="Description of other deductions" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Declaration & Signature ── -->
+            <div class="declaration-box">
+                <h3>⚠️ Declaration</h3>
+                <p>
+                    I declare that the information I have provided in this Self Assessment return is, to the best of my knowledge,
+                    correct and complete. I understand that if I give incorrect information, penalties may be imposed and
+                    I may be prosecuted.
+                </p>
+
+                <div class="field-group" style="margin-bottom:18px; max-width:480px;">
+                    <label class="field-label" for="declarationName">Full Name</label>
+                    <input type="text" id="declarationName" class="form-input" placeholder="Your full legal name">
+                </div>
+
+                <label class="sig-label">Signature</label>
+                <canvas id="signatureCanvas" class="sig-canvas" width="900" height="120"></canvas>
+                <div class="sig-actions">
+                    <button class="btn-clear" onclick="clearSignature()">Clear</button>
+                    <button class="btn-submit" onclick="submitDeclaration()">Submit Return</button>
+                </div>
+            </div>
+
+        </div><!-- /form-panel -->
+    </div><!-- /left column -->
+
+    <!-- ─── RIGHT PANEL ─── -->
+    <div class="right-panel">
+
+        <!-- Call widget -->
+        <div class="widget-card">
+            <div class="widget-header call-header-bg">📞 &nbsp;HMRC SA Helpline</div>
+            <div class="widget-body">
+                <div class="call-icon">☎️</div>
+                <p class="call-body-text">
+                    Connect to an HMRC Self Assessment advisor. Your answers will populate the form automatically during the call.
+                </p>
+                <button class="btn-call" id="callButton" onclick="startCall()">
+                    Start Call with HMRC
+                </button>
+                <div class="call-status-box" id="callStatus">Ready to connect</div>
+            </div>
+        </div>
+
+        <!-- Progress tracker -->
+        <div class="widget-card">
+            <div class="widget-header progress-header-bg">📋 &nbsp;Completion Progress</div>
+            <div class="widget-body" style="padding-top:10px; padding-bottom:10px;">
+                <ul class="progress-list">
+                    <li class="progress-item">
+                        <span class="p-icon p-icon-pending" id="picon-personal">1</span>
+                        Personal Details
+                    </li>
+                    <li class="progress-item">
+                        <span class="p-icon p-icon-pending" id="picon-employment">2</span>
+                        Employment Income
+                    </li>
+                    <li class="progress-item">
+                        <span class="p-icon p-icon-pending" id="picon-other">3</span>
+                        Other Income
+                    </li>
+                    <li class="progress-item">
+                        <span class="p-icon p-icon-pending" id="picon-reliefs">4</span>
+                        Reliefs &amp; Deductions
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Secure session notice -->
+        <div class="info-box">
+            <strong>🔒 Secure Session</strong><br>
+            Your data is transmitted securely and only valid for the duration of your call.
+            HMRC will never ask for your bank details over the phone.
+        </div>
+
+    </div><!-- /right-panel -->
+
+</div><!-- /main-container -->
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="govuk-footer">
+    <p>HM Revenue &amp; Customs &mdash; Crown Copyright &copy; 2025</p>
+    <p>This is a demonstration service. Do not submit real personal information.</p>
+</footer>
+
+<!-- ═══════════════════ COGNIGY WEBCHAT ═══════════════════ -->
+<script src="https://webchat-trial.cognigy.ai/webchat.js"></script>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script>
+// ────────────────────────────────────────────────────────
+// Config
+// ────────────────────────────────────────────────────────
+const NTFY_TOPIC    = 'hmrc-sa-form-9x4kp2';
+const NTFY_SSE_URL  = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
+const COGNIGY_EP    = 'https://endpoint-trial.cognigy.ai/9fcf57199d1d1674e491aed598a2c7d1e4c58cf4c7c1ea38ea949daf5626cae6';
+
+// ────────────────────────────────────────────────────────
+// ntfy.sh SSE — real-time form population
+// ────────────────────────────────────────────────────────
+let sseSource = null;
+
+function connectSSE() {
+    if (sseSource) sseSource.close();
+    sseSource = new EventSource(NTFY_SSE_URL);
+
+    sseSource.addEventListener('message', function(evt) {
+        try {
+            var wrapper = JSON.parse(evt.data);
+            // ntfy wraps the posted body in wrapper.message (string)
+            var payload = typeof wrapper.message === 'string'
+                ? JSON.parse(wrapper.message)
+                : wrapper;
+            routePayload(payload);
+        } catch(e) {
+            console.warn('SSE parse error:', e, evt.data);
+        }
+    });
+
+    sseSource.addEventListener('open', function() {
+        document.getElementById('liveBadge').style.display = 'inline-flex';
+    });
+
+    sseSource.addEventListener('error', function() {
+        document.getElementById('liveBadge').style.display = 'none';
+        setTimeout(connectSSE, 5000);
+    });
+}
+
+function routePayload(data) {
+    if (!data || !data.section) return;
+    switch (data.section) {
+        case 'personal':           fillPersonal(data);    break;
+        case 'employment':         fillEmployment(data);  break;
+        case 'other_income':       fillOtherIncome(data); break;
+        case 'reliefs_deductions': fillReliefs(data);     break;
+    }
+}
+
+// ────────────────────────────────────────────────────────
+// Field helpers
+// ────────────────────────────────────────────────────────
+function setField(id, val) {
+    var el = document.getElementById(id);
+    if (el && val !== undefined && val !== null && val !== '') {
+        el.value = val;
+        el.classList.add('populated');
+    }
+}
+
+function fmt(num) {
+    if (num === undefined || num === null || num === '') return '0.00';
+    return parseFloat(num).toLocaleString('en-GB', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function markDone(badgeId, piconId) {
+    var b = document.getElementById(badgeId);
+    if (b) { b.textContent = 'Complete ✓'; b.className = 'section-badge badge-complete'; }
+    var p = document.getElementById(piconId);
+    if (p) { p.textContent = '✓'; p.className = 'p-icon p-icon-done'; }
+}
+
+// ────────────────────────────────────────────────────────
+// Section populators
+// ────────────────────────────────────────────────────────
+function fillPersonal(d) {
+    setField('fullName',      d.full_name);
+    setField('niNumber',      d.ni_number);
+    setField('utr',           d.utr);
+    setField('dateOfBirth',   d.date_of_birth);
+    setField('address',       d.address);
+    // Pre-fill declaration name with the verified name
+    setField('declarationName', d.full_name);
+    if (d.tax_year) {
+        document.getElementById('taxYearBadge').textContent = 'Tax Year: ' + d.tax_year;
+    }
+    markDone('badge-personal', 'picon-personal');
+}
+
+function fillEmployment(d) {
+    setField('employerName', d.employer_name);
+    setField('annualSalary', fmt(d.annual_salary));
+    setField('payeTax',      fmt(d.paye_tax_deducted));
+    markDone('badge-employment', 'picon-employment');
+}
+
+function fillOtherIncome(d) {
+    setField('rentalIncome',   fmt(d.rental_income));
+    setField('bankInterest',   fmt(d.bank_interest));
+    setField('dividendIncome', fmt(d.dividend_income));
+    markDone('badge-other', 'picon-other');
+}
+
+function fillReliefs(d) {
+    setField('giftAid',             fmt(d.gift_aid_donations));
+    setField('pensionContribs',     fmt(d.pension_contributions));
+    setField('otherDeductions',     fmt(d.other_deductions));
+    setField('otherDeductionsDesc', d.other_deductions_description);
+    markDone('badge-reliefs', 'picon-reliefs');
+}
+
+// ────────────────────────────────────────────────────────
+// Click-to-Call
+// ────────────────────────────────────────────────────────
+function startCall() {
+    var btn    = document.getElementById('callButton');
+    var status = document.getElementById('callStatus');
+    btn.disabled  = true;
+    btn.textContent = 'Connecting…';
+    status.textContent = 'Connecting to HMRC Self Assessment advisor…';
+
+    if (typeof initWebchat !== 'undefined') {
+        initWebchat(COGNIGY_EP, {
+            settings: {
+                colorScheme:      '#00703C',
+                title:            'HMRC Self Assessment',
+                subtitle:         'Voice Assistant',
+                enableVoice:      true,
+                useVoiceGateway:  true,
+                startBehavior:    'button',
+                widgetPosition:   'bottom-right'
+            }
+        });
+        status.textContent = '✅ Connected — your advisor is ready';
+        btn.textContent = 'Call in Progress';
+    } else {
+        // Webchat script not loaded — open endpoint URL directly
+        window.open(COGNIGY_EP, '_blank');
+        status.innerHTML = '⚠️ Opening voice session in a new tab.';
+        btn.textContent   = 'Retry';
+        btn.disabled      = false;
+    }
+}
+
+// ────────────────────────────────────────────────────────
+// Signature canvas
+// ────────────────────────────────────────────────────────
+(function() {
+    var canvas  = document.getElementById('signatureCanvas');
+    var ctx     = canvas.getContext('2d');
+    var drawing = false;
+    var lx = 0, ly = 0;
+
+    ctx.strokeStyle = '#0b0c0c';
+    ctx.lineWidth   = 2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+
+    function pos(e) {
+        var r = canvas.getBoundingClientRect();
+        var sx = canvas.width  / r.width;
+        var sy = canvas.height / r.height;
+        var src = e.touches ? e.touches[0] : e;
+        return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+    }
+
+    canvas.addEventListener('mousedown',  function(e){ drawing=true; var p=pos(e); lx=p.x; ly=p.y; });
+    canvas.addEventListener('mousemove',  function(e){
+        if(!drawing) return;
+        var p=pos(e);
+        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
+        lx=p.x; ly=p.y;
+    });
+    canvas.addEventListener('mouseup',    function(){ drawing=false; });
+    canvas.addEventListener('mouseleave', function(){ drawing=false; });
+    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); drawing=true; var p=pos(e); lx=p.x; ly=p.y; }, {passive:false});
+    canvas.addEventListener('touchmove',  function(e){
+        e.preventDefault();
+        if(!drawing) return;
+        var p=pos(e);
+        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
+        lx=p.x; ly=p.y;
+    }, {passive:false});
+    canvas.addEventListener('touchend',   function(){ drawing=false; });
+})();
+
+window.clearSignature = function() {
+    var canvas = document.getElementById('signatureCanvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+};
+
+window.submitDeclaration = function() {
+    var name = document.getElementById('declarationName').value.trim();
+    if (!name) {
+        alert('Please enter your full name in the Declaration section before submitting.');
+        return;
+    }
+    var canvas  = document.getElementById('signatureCanvas');
+    var isEmpty = !canvas.getContext('2d')
+        .getImageData(0, 0, canvas.width, canvas.height).data
+        .some(function(ch){ return ch !== 0; });
+    if (isEmpty) {
+        alert('Please sign the declaration before submitting.');
+        return;
+    }
+    alert('Thank you, ' + name + '.\n\nYour Self Assessment return has been submitted successfully.\nYou will receive a confirmation reference by post within 5 working days.');
+};
+
+// ────────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────────
+connectSSE();
+</script>
+
+</body>
+</html>
