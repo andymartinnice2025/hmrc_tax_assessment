@@ -290,6 +290,32 @@
             color: #505a5f;
             min-height: 36px;
         }
+        .call-controls {
+            display: none;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-mute {
+            flex: 1;
+            background: white;
+            border: 2px solid var(--hmrc-dark);
+            padding: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-end {
+            flex: 1;
+            background: var(--hmrc-red);
+            color: white;
+            border: none;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
 
         /* Progress card */
         .progress-header-bg { background: var(--hmrc-blue); }
@@ -571,7 +597,13 @@
                 <button class="btn-call" id="callButton" onclick="startCall()">
                     Start Call with HMRC
                 </button>
+                <div class="call-controls" id="callControls">
+                    <button class="btn-mute" id="muteBtn" onclick="toggleMute()">🎤 Mute</button>
+                    <button class="btn-end"  onclick="endCall()">📵 End Call</button>
+                </div>
                 <div class="call-status-box" id="callStatus">Ready to connect</div>
+                <!-- Hidden audio element routes the remote voice stream -->
+                <audio id="remoteAudio" autoplay playsinline style="display:none;"></audio>
             </div>
         </div>
 
@@ -617,8 +649,8 @@
     <p>This is a demonstration service. Do not submit real personal information.</p>
 </footer>
 
-<!-- ═══════════════════ COGNIGY WEBCHAT ═══════════════════ -->
-<script src="https://webchat-trial.cognigy.ai/webchat.js"></script>
+<!-- ═══════════════════ JsSIP (WebRTC SIP client) ═══════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jssip/3.10.0/jssip.min.js"></script>
 
 <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
 <script>
@@ -737,107 +769,83 @@ function fillReliefs(d) {
 }
 
 // ────────────────────────────────────────────────────────
-// Click-to-Call
+// SIP / WebRTC Click-to-Call  (Cognigy Voice Gateway 2)
+// Credentials sourced from the endpoint's sipConnectivityInfo
 // ────────────────────────────────────────────────────────
-function startCall() {
-    var btn    = document.getElementById('callButton');
-    var status = document.getElementById('callStatus');
-    btn.disabled  = true;
-    btn.textContent = 'Connecting…';
-    status.textContent = 'Connecting to HMRC Self Assessment advisor…';
+var SIP_WS_URI   = 'wss://sip-vg-trial.cognigy.ai:8443';
+var SIP_REALM    = 'csa-sip-vg-trial.cognigy.ai';
+var SIP_USERNAME = 'widget-70fb0e10-0ce0-4218-874d-dbda79b7cfd5';
+var SIP_PASSWORD = 'SMwSXpDdCl31SHbT';
+// Call target = the Voice Gateway application SID
+var SIP_CALL_URI = 'sip:70fb0e10-0ce0-4218-874d-dbda79b7cfd5@csa-sip-vg-trial.cognigy.ai';
 
-    if (typeof initWebchat !== 'undefined') {
-        initWebchat(COGNIGY_EP, {
-            settings: {
-                colorScheme:      '#00703C',
-                title:            'HMRC Self Assessment',
-                subtitle:         'Voice Assistant',
-                enableVoice:      true,
-                useVoiceGateway:  true,
-                startBehavior:    'button',
-                widgetPosition:   'bottom-right'
-            }
-        });
-        status.textContent = '✅ Connected — your advisor is ready';
-        btn.textContent = 'Call in Progress';
-    } else {
-        // Webchat script not loaded — open endpoint URL directly
-        window.open(COGNIGY_EP, '_blank');
-        status.innerHTML = '⚠️ Opening voice session in a new tab.';
-        btn.textContent   = 'Retry';
-        btn.disabled      = false;
+var sipUA          = null;
+var sipSession     = null;
+var isMuted        = false;
+
+function startCall() {
+    if (typeof JsSIP === 'undefined') {
+        setCallStatus('❌ SIP library not loaded. Please refresh the page.');
+        return;
     }
+    var btn = document.getElementById('callButton');
+    btn.disabled    = true;
+    btn.textContent = 'Connecting…';
+    setCallStatus('Initialising secure SIP connection…');
+
+    JsSIP.debug.disable('JsSIP:*');
+
+    var socket = new JsSIP.WebSocketInterface(SIP_WS_URI);
+    sipUA = new JsSIP.UA({
+        sockets:  [socket],
+        uri:      'sip:' + SIP_USERNAME + '@' + SIP_REALM,
+        password: SIP_PASSWORD,
+        register: false      // outbound-only — no registration needed
+    });
+
+    sipUA.on('connected', function() {
+        setCallStatus('Placing call…');
+        placeCall();
+    });
+
+    sipUA.on('disconnected', function() {
+        setCallStatus('Connection lost');
+        resetCallUI();
+    });
+
+    sipUA.start();
 }
 
-// ────────────────────────────────────────────────────────
-// Signature canvas
-// ────────────────────────────────────────────────────────
-(function() {
-    var canvas  = document.getElementById('signatureCanvas');
-    var ctx     = canvas.getContext('2d');
-    var drawing = false;
-    var lx = 0, ly = 0;
+function placeCall() {
+    var handlers = {
+        progress: function() {
+            setCallStatus('📞 Ringing…');
+        },
+        confirmed: function() {
+            setCallStatus('✅ Connected — speak with your HMRC advisor');
+            document.getElementById('callButton').textContent = 'Call in Progress';
+            showCallControls(true);
 
-    ctx.strokeStyle = '#0b0c0c';
-    ctx.lineWidth   = 2;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-
-    function pos(e) {
-        var r = canvas.getBoundingClientRect();
-        var sx = canvas.width  / r.width;
-        var sy = canvas.height / r.height;
-        var src = e.touches ? e.touches[0] : e;
-        return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
-    }
-
-    canvas.addEventListener('mousedown',  function(e){ drawing=true; var p=pos(e); lx=p.x; ly=p.y; });
-    canvas.addEventListener('mousemove',  function(e){
-        if(!drawing) return;
-        var p=pos(e);
-        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
-        lx=p.x; ly=p.y;
-    });
-    canvas.addEventListener('mouseup',    function(){ drawing=false; });
-    canvas.addEventListener('mouseleave', function(){ drawing=false; });
-    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); drawing=true; var p=pos(e); lx=p.x; ly=p.y; }, {passive:false});
-    canvas.addEventListener('touchmove',  function(e){
-        e.preventDefault();
-        if(!drawing) return;
-        var p=pos(e);
-        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
-        lx=p.x; ly=p.y;
-    }, {passive:false});
-    canvas.addEventListener('touchend',   function(){ drawing=false; });
-})();
-
-window.clearSignature = function() {
-    var canvas = document.getElementById('signatureCanvas');
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-};
-
-window.submitDeclaration = function() {
-    var name = document.getElementById('declarationName').value.trim();
-    if (!name) {
-        alert('Please enter your full name in the Declaration section before submitting.');
-        return;
-    }
-    var canvas  = document.getElementById('signatureCanvas');
-    var isEmpty = !canvas.getContext('2d')
-        .getImageData(0, 0, canvas.width, canvas.height).data
-        .some(function(ch){ return ch !== 0; });
-    if (isEmpty) {
-        alert('Please sign the declaration before submitting.');
-        return;
-    }
-    alert('Thank you, ' + name + '.\n\nYour Self Assessment return has been submitted successfully.\nYou will receive a confirmation reference by post within 5 working days.');
-};
-
-// ────────────────────────────────────────────────────────
-// Init
-// ────────────────────────────────────────────────────────
-connectSSE();
-</script>
-
-</body>
-</html>
+            // Route remote audio to the hidden <audio> element
+            try {
+                var remoteStream = new MediaStream();
+                sipSession.connection.getReceivers().forEach(function(r) {
+                    if (r.track) remoteStream.addTrack(r.track);
+                });
+                var audio = document.getElementById('remoteAudio');
+                audio.srcObject = remoteStream;
+                audio.play().catch(function(e){ console.warn('Audio play blocked:', e); });
+            } catch(e) {
+                console.error('Remote audio routing error:', e);
+            }
+        },
+        ended: function() {
+            setCallStatus('Call ended');
+            resetCallUI();
+        },
+        failed: function(e) {
+            var reason = (e && e.cause) ? e.cause : 'unknown error';
+            setCallStatus('❌ Call failed: ' + reason);
+            resetCallUI();
+        }
+   
