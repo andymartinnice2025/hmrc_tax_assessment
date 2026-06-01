@@ -375,7 +375,7 @@
             </div>
 
             <!-- ── Section 1: Personal Details ── -->
-            <div class="form-section">
+            <div class="form-section" id="section-personal">
                 <div class="section-header">
                     <div class="section-title">
                         <span class="section-num">1</span>
@@ -414,7 +414,7 @@
             </div>
 
             <!-- ── Section 2: Employment Income ── -->
-            <div class="form-section">
+            <div class="form-section" id="section-employment">
                 <div class="section-header">
                     <div class="section-title">
                         <span class="section-num">2</span>
@@ -449,7 +449,7 @@
             </div>
 
             <!-- ── Section 3: Other Income ── -->
-            <div class="form-section">
+            <div class="form-section" id="section-other-income">
                 <div class="section-header">
                     <div class="section-title">
                         <span class="section-num">3</span>
@@ -488,7 +488,7 @@
             </div>
 
             <!-- ── Section 4: Reliefs & Deductions ── -->
-            <div class="form-section">
+            <div class="form-section" id="section-reliefs">
                 <div class="section-header">
                     <div class="section-title">
                         <span class="section-num">4</span>
@@ -533,7 +533,7 @@
             </div>
 
             <!-- ── Declaration & Signature ── -->
-            <div class="declaration-box">
+            <div class="declaration-box" id="section-declaration">
                 <h3>⚠️ Declaration</h3>
                 <p>
                     I declare that the information I have provided in this Self Assessment return is, to the best of my knowledge,
@@ -690,11 +690,33 @@ function fmt(num) {
     });
 }
 
+// Map each completed section to the next section to scroll into view
+var NEXT_SECTION = {
+    'badge-personal':   'section-employment',
+    'badge-employment': 'section-other-income',
+    'badge-other':      'section-reliefs',
+    'badge-reliefs':    'section-declaration'
+};
+
+function scrollToSection(sectionId) {
+    var el = document.getElementById(sectionId);
+    if (!el) return;
+    // Account for sticky header height (approx 90px header + phase bar)
+    var offset = 100;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: top, behavior: 'smooth' });
+}
+
 function markDone(badgeId, piconId) {
     var b = document.getElementById(badgeId);
     if (b) { b.textContent = 'Complete ✓'; b.className = 'section-badge badge-complete'; }
     var p = document.getElementById(piconId);
     if (p) { p.textContent = '✓'; p.className = 'p-icon p-icon-done'; }
+    // Scroll to next section after fields have finished populating
+    var nextId = NEXT_SECTION[badgeId];
+    if (nextId) {
+        setTimeout(function() { scrollToSection(nextId); }, 500);
+    }
 }
 
 // ────────────────────────────────────────────────────────
@@ -781,31 +803,4 @@ function fillReliefs(d) {
 
 window.clearSignature = function() {
     var canvas = document.getElementById('signatureCanvas');
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-};
-
-window.submitDeclaration = function() {
-    var name = document.getElementById('declarationName').value.trim();
-    if (!name) {
-        alert('Please enter your full name in the Declaration section before submitting.');
-        return;
-    }
-    var canvas  = document.getElementById('signatureCanvas');
-    var isEmpty = !canvas.getContext('2d')
-        .getImageData(0, 0, canvas.width, canvas.height).data
-        .some(function(ch){ return ch !== 0; });
-    if (isEmpty) {
-        alert('Please sign the declaration before submitting.');
-        return;
-    }
-    alert('Thank you, ' + name + '.\n\nYour Self Assessment return has been submitted successfully.\nYou will receive a confirmation reference by post within 5 working days.');
-};
-
-// ────────────────────────────────────────────────────────
-// Init
-// ────────────────────────────────────────────────────────
-connectSSE();
-</script>
-
-</body>
-</html>
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canv
