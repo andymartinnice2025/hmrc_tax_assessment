@@ -201,6 +201,66 @@
         }
         .currency-wrap .form-input { padding-left: 26px; }
 
+        /* ── Tax result panel ── */
+        .tax-result-panel {
+            display: none;
+            margin: 0;
+            border-top: 2px solid var(--hmrc-grey);
+        }
+        .tax-result-panel.visible { display: block; }
+
+        .tax-result-header {
+            padding: 14px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--hmrc-grey);
+        }
+        .tax-result-header .section-title { font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .tax-result-header .section-num-calc {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold; flex-shrink: 0;
+        }
+        .tax-result-body { padding: 24px 28px; }
+
+        .tax-summary-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 16px; margin-bottom: 20px;
+        }
+        .tax-stat {
+            background: var(--hmrc-grey);
+            padding: 14px 16px; border-radius: 2px;
+            border-left: 4px solid var(--hmrc-mid-grey);
+        }
+        .tax-stat-label { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.7px; color: #505a5f; margin-bottom: 6px; }
+        .tax-stat-value { font-size: 20px; font-weight: bold; }
+
+        .tax-verdict {
+            padding: 18px 20px;
+            border-radius: 2px;
+            display: flex; align-items: flex-start; gap: 14px;
+            font-size: 15px; line-height: 1.6;
+        }
+        .tax-verdict.owed    { background: #fde8e8; border-left: 5px solid var(--hmrc-red); }
+        .tax-verdict.refund  { background: #e8f5ee; border-left: 5px solid var(--hmrc-green); }
+        .tax-verdict-icon    { font-size: 24px; flex-shrink: 0; }
+        .tax-verdict-amount  { font-size: 28px; font-weight: bold; display: block; margin-bottom: 4px; }
+        .tax-verdict-desc    { font-size: 13px; color: #505a5f; }
+
+        /* ── Vulnerability / callback banner ── */
+        .vulnerability-banner {
+            display: none;
+            background: #fff7f0;
+            border: 2px solid #f97316;
+            padding: 20px 28px;
+            margin: 0;
+        }
+        .vulnerability-banner.visible { display: flex; gap: 16px; align-items: flex-start; }
+        .vuln-icon { font-size: 28px; flex-shrink: 0; }
+        .vuln-content {}
+        .vuln-title { font-size: 16px; font-weight: bold; color: #c2410c; margin-bottom: 6px; }
+        .vuln-body  { font-size: 14px; color: #7c2d12; line-height: 1.6; }
+        .vuln-ref   { display: inline-block; margin-top: 10px; background: #ffedd5; border: 1px solid #fed7aa; padding: 4px 12px; font-size: 13px; font-weight: bold; color: #c2410c; }
+
         /* ── Declaration ── */
         .declaration-box {
             background: #fff7bf;
@@ -655,6 +715,55 @@
                 </div>
             </div>
 
+            <!-- ── Tax Calculation Result ── -->
+            <div class="tax-result-panel" id="taxResultPanel">
+                <div class="tax-result-header">
+                    <div class="section-title">
+                        <span class="section-num-calc" id="taxResultNum" style="background:var(--hmrc-green);color:white;">£</span>
+                        Tax Position — <span id="taxResultYear">2024/25</span>
+                    </div>
+                    <span class="section-badge badge-complete" id="badge-tax">Calculated ✓</span>
+                </div>
+                <div class="tax-result-body">
+                    <div class="tax-summary-grid">
+                        <div class="tax-stat" style="border-left-color:var(--hmrc-blue);">
+                            <div class="tax-stat-label">Total Income</div>
+                            <div class="tax-stat-value" id="taxTotalIncome">—</div>
+                        </div>
+                        <div class="tax-stat" style="border-left-color:var(--hmrc-green);">
+                            <div class="tax-stat-label">Income Tax Due</div>
+                            <div class="tax-stat-value" id="taxDue">—</div>
+                        </div>
+                        <div class="tax-stat" style="border-left-color:#6b7280;">
+                            <div class="tax-stat-label">PAYE Already Paid</div>
+                            <div class="tax-stat-value" id="taxPAYE">—</div>
+                        </div>
+                    </div>
+                    <div class="tax-verdict" id="taxVerdict">
+                        <span class="tax-verdict-icon" id="taxVerdictIcon"></span>
+                        <div>
+                            <span class="tax-verdict-amount" id="taxVerdictAmount"></span>
+                            <span class="tax-verdict-desc"  id="taxVerdictDesc"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Vulnerability / Callback Banner ── -->
+            <div class="vulnerability-banner" id="vulnerabilityBanner">
+                <div class="vuln-icon">🟠</div>
+                <div class="vuln-content">
+                    <div class="vuln-title">Specialist Callback Arranged</div>
+                    <div class="vuln-body">
+                        A vulnerability flag has been raised on this account. An HMRC specialist support advisor
+                        will contact <strong>Steven Rogers</strong> within <strong>2 working days</strong> to discuss
+                        available options in confidence.<br>
+                        <span id="vulnReason" style="color:#9a3412;"></span>
+                    </div>
+                    <span class="vuln-ref" id="vulnRef"></span>
+                </div>
+            </div>
+
             <!-- ── Declaration & Signature ── -->
             <div class="declaration-box" id="section-declaration">
                 <h3>⚠️ Declaration</h3>
@@ -711,6 +820,10 @@
                     <li class="progress-item">
                         <span class="p-icon p-icon-pending" id="picon-reliefs">4</span>
                         Reliefs &amp; Deductions
+                    </li>
+                    <li class="progress-item">
+                        <span class="p-icon p-icon-pending" id="picon-tax">£</span>
+                        Tax Calculation
                     </li>
                 </ul>
             </div>
@@ -882,10 +995,12 @@ function connectSSE() {
 function routePayload(data) {
     if (!data || !data.section) return;
     switch (data.section) {
-        case 'personal':           fillPersonal(data);    break;
-        case 'employment':         fillEmployment(data);  break;
-        case 'other_income':       fillOtherIncome(data); break;
-        case 'reliefs_deductions': fillReliefs(data);     break;
+        case 'personal':           fillPersonal(data);       break;
+        case 'employment':         fillEmployment(data);     break;
+        case 'other_income':       fillOtherIncome(data);    break;
+        case 'reliefs_deductions': fillReliefs(data);        break;
+        case 'tax_calculation':    showTaxResult(data);      break;
+        case 'vulnerability_flag': showVulnerability(data);  break;
     }
 }
 
@@ -979,6 +1094,71 @@ function fillReliefs(d) {
     markDone('badge-reliefs', 'picon-reliefs');
 }
 
+
+// ────────────────────────────────────────────────────────
+// Tax calculation result
+// ────────────────────────────────────────────────────────
+function showTaxResult(d) {
+    var panel = document.getElementById('taxResultPanel');
+    if (!panel) return;
+    panel.classList.add('visible');
+
+    // Stat boxes
+    var fmtGBP = function(n) {
+        return '£' + parseFloat(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    document.getElementById('taxTotalIncome').textContent = fmtGBP(d.total_income   || 0);
+    document.getElementById('taxDue').textContent         = fmtGBP(d.income_tax_due || 0);
+    document.getElementById('taxPAYE').textContent        = fmtGBP(d.paye_paid      || 0);
+    if (d.tax_year) document.getElementById('taxResultYear').textContent = d.tax_year;
+
+    // Verdict
+    var verdict  = document.getElementById('taxVerdict');
+    var icon     = document.getElementById('taxVerdictIcon');
+    var amount   = document.getElementById('taxVerdictAmount');
+    var desc     = document.getElementById('taxVerdictDesc');
+    var amtStr   = fmtGBP(d.amount || 0);
+
+    if (d.is_owed) {
+        verdict.className = 'tax-verdict owed';
+        icon.textContent  = '⚠️';
+        amount.textContent = amtStr + ' owed to HMRC';
+        amount.style.color = 'var(--hmrc-red)';
+        desc.textContent   = 'Payment is due by 31 January 2026. If you are unable to pay in full, a specialist advisor can discuss your options.';
+    } else {
+        verdict.className = 'tax-verdict refund';
+        icon.textContent  = '✅';
+        amount.textContent = amtStr + ' refund due';
+        amount.style.color = 'var(--hmrc-green)';
+        desc.textContent   = 'HMRC will process your refund once your return has been filed and verified. This typically takes 5–10 working days.';
+    }
+
+    // Tick progress icon
+    var picon = document.getElementById('picon-tax');
+    if (picon) { picon.textContent = '✓'; picon.className = 'p-icon p-icon-done'; }
+
+    // Scroll into view
+    setTimeout(function() { scrollToSection('taxResultPanel'); }, 400);
+}
+
+// ────────────────────────────────────────────────────────
+// Vulnerability flag
+// ────────────────────────────────────────────────────────
+function showVulnerability(d) {
+    var banner = document.getElementById('vulnerabilityBanner');
+    if (!banner) return;
+    banner.classList.add('visible');
+
+    if (d.reason) {
+        document.getElementById('vulnReason').textContent = 'Reason noted: ' + d.reason;
+    }
+    if (d.reference) {
+        document.getElementById('vulnRef').textContent = 'Reference: ' + d.reference;
+    }
+
+    // Scroll into view after a short delay
+    setTimeout(function() { scrollToSection('vulnerabilityBanner'); }, 500);
+}
 
 // ────────────────────────────────────────────────────────
 // Signature canvas
