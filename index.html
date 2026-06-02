@@ -261,52 +261,47 @@
         .vuln-body  { font-size: 14px; color: #7c2d12; line-height: 1.6; }
         .vuln-ref   { display: inline-block; margin-top: 10px; background: #ffedd5; border: 1px solid #fed7aa; padding: 4px 12px; font-size: 13px; font-weight: bold; color: #c2410c; }
 
-        /* ── Declaration ── */
-        .declaration-box {
-            background: #fff7bf;
-            border: 2px solid var(--hmrc-yellow);
-            padding: 22px 28px;
+        /* ── Return submitted panel ── */
+        .return-submitted {
+            display: none;
+            background: #e8f5ee;
+            border-top: 2px solid var(--hmrc-grey);
+            padding: 24px 28px;
+            align-items: flex-start;
+            gap: 16px;
         }
-        .declaration-box h3 {
-            font-size: 16px;
-            margin-bottom: 10px;
+        .return-submitted.visible { display: flex; }
+        .submitted-icon { font-size: 32px; flex-shrink: 0; }
+        .submitted-content {}
+        .submitted-title { font-size: 18px; font-weight: bold; color: var(--hmrc-green); margin-bottom: 6px; }
+        .submitted-body  { font-size: 14px; color: #1a3d2b; line-height: 1.7; }
+        .submitted-ref   {
+            display: inline-block; margin-top: 10px;
+            background: white; border: 1px solid #6ee7b7;
+            padding: 5px 14px; font-size: 13px;
+            font-weight: bold; color: var(--hmrc-green);
         }
-        .declaration-box p {
-            font-size: 14px;
-            color: #3d3d3d;
-            margin-bottom: 18px;
-            line-height: 1.7;
+
+        /* ── Vulnerability status panel ── */
+        .vuln-status-panel {
+            display: none;
+            border-top: 2px solid var(--hmrc-grey);
+            padding: 20px 28px;
+            align-items: flex-start;
+            gap: 16px;
         }
-        .sig-label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 6px; }
-        .sig-canvas {
-            width: 100%; height: 120px;
-            border: 2px solid var(--hmrc-dark);
-            background: white;
-            cursor: crosshair;
-            display: block;
-            touch-action: none;
+        .vuln-status-panel.visible  { display: flex; }
+        .vuln-status-panel.clear    { background: #f3f2f1; border-left: 5px solid #6b7280; }
+        .vuln-status-panel.flagged  { background: #fff7f0; border-left: 5px solid #f97316; }
+        .vuln-status-icon { font-size: 28px; flex-shrink: 0; }
+        .vuln-status-content {}
+        .vuln-status-title  { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+        .vuln-status-body   { font-size: 13px; line-height: 1.6; }
+        .vuln-status-ref    {
+            display: inline-block; margin-top: 8px;
+            padding: 4px 12px; font-size: 12px; font-weight: bold;
+            background: #ffedd5; border: 1px solid #fed7aa; color: #c2410c;
         }
-        .sig-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-clear {
-            background: white;
-            border: 2px solid var(--hmrc-dark);
-            padding: 8px 18px;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .btn-submit {
-            flex: 1;
-            background: var(--hmrc-green);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .btn-submit:hover { background: var(--hmrc-green-dark); }
 
         /* ── Right panel ── */
         .right-panel { display: flex; flex-direction: column; gap: 20px; }
@@ -764,25 +759,27 @@
                 </div>
             </div>
 
-            <!-- ── Declaration & Signature ── -->
-            <div class="declaration-box" id="section-declaration">
-                <h3>⚠️ Declaration</h3>
-                <p>
-                    I declare that the information I have provided in this Self Assessment return is, to the best of my knowledge,
-                    correct and complete. I understand that if I give incorrect information, penalties may be imposed and
-                    I may be prosecuted.
-                </p>
-
-                <div class="field-group" style="margin-bottom:18px; max-width:480px;">
-                    <label class="field-label" for="declarationName">Full Name</label>
-                    <input type="text" id="declarationName" class="form-input" placeholder="Your full legal name">
+            <!-- ── Return Submitted ── -->
+            <div class="return-submitted" id="section-declaration" id="returnSubmitted">
+                <div class="submitted-icon">✅</div>
+                <div class="submitted-content">
+                    <div class="submitted-title">Self Assessment Return Submitted</div>
+                    <div class="submitted-body">
+                        Your twenty twenty-four to twenty twenty-five Self Assessment return has been
+                        successfully completed and submitted via HMRC's digital assistant.
+                        A confirmation will be sent to <strong>steven.rogers@gmail.com</strong>.
+                    </div>
+                    <span class="submitted-ref" id="submissionRef"></span>
                 </div>
+            </div>
 
-                <label class="sig-label">Signature</label>
-                <canvas id="signatureCanvas" class="sig-canvas" width="900" height="120"></canvas>
-                <div class="sig-actions">
-                    <button class="btn-clear" onclick="clearSignature()">Clear</button>
-                    <button class="btn-submit" onclick="submitDeclaration()">Submit Return</button>
+            <!-- ── Vulnerability Status ── -->
+            <div class="vuln-status-panel" id="vulnStatusPanel">
+                <div class="vuln-status-icon" id="vulnStatusIcon"></div>
+                <div class="vuln-status-content">
+                    <div class="vuln-status-title" id="vulnStatusTitle"></div>
+                    <div class="vuln-status-body"  id="vulnStatusBody"></div>
+                    <span class="vuln-status-ref"  id="vulnStatusRef" style="display:none;"></span>
                 </div>
             </div>
 
@@ -923,7 +920,6 @@ function prePopulateCitizenData() {
     setPreFilled('utr',           CITIZEN.utr);
     setPreFilled('dateOfBirth',   CITIZEN.dob);
     setPreFilled('address',       CITIZEN.address);
-    setPreFilled('declarationName', CITIZEN.name);
 
     // Tax year badge
     document.getElementById('taxYearBadge').textContent = 'Tax Year: ' + CITIZEN.tax_year;
@@ -1103,132 +1099,108 @@ function showTaxResult(d) {
     if (!panel) return;
     panel.classList.add('visible');
 
-    // Stat boxes
     var fmtGBP = function(n) {
         return '£' + parseFloat(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
+
+    // Stat boxes
     document.getElementById('taxTotalIncome').textContent = fmtGBP(d.total_income   || 0);
     document.getElementById('taxDue').textContent         = fmtGBP(d.income_tax_due || 0);
     document.getElementById('taxPAYE').textContent        = fmtGBP(d.paye_paid      || 0);
     if (d.tax_year) document.getElementById('taxResultYear').textContent = d.tax_year;
 
     // Verdict
-    var verdict  = document.getElementById('taxVerdict');
-    var icon     = document.getElementById('taxVerdictIcon');
-    var amount   = document.getElementById('taxVerdictAmount');
-    var desc     = document.getElementById('taxVerdictDesc');
-    var amtStr   = fmtGBP(d.amount || 0);
+    var verdict = document.getElementById('taxVerdict');
+    var icon    = document.getElementById('taxVerdictIcon');
+    var amount  = document.getElementById('taxVerdictAmount');
+    var desc    = document.getElementById('taxVerdictDesc');
+    var amtStr  = fmtGBP(d.amount || 0);
 
     if (d.is_owed) {
-        verdict.className = 'tax-verdict owed';
-        icon.textContent  = '⚠️';
+        verdict.className  = 'tax-verdict owed';
+        icon.textContent   = '⚠️';
         amount.textContent = amtStr + ' owed to HMRC';
         amount.style.color = 'var(--hmrc-red)';
         desc.textContent   = 'Payment is due by 31 January 2026. If you are unable to pay in full, a specialist advisor can discuss your options.';
     } else {
-        verdict.className = 'tax-verdict refund';
-        icon.textContent  = '✅';
+        verdict.className  = 'tax-verdict refund';
+        icon.textContent   = '✅';
         amount.textContent = amtStr + ' refund due';
         amount.style.color = 'var(--hmrc-green)';
         desc.textContent   = 'HMRC will process your refund once your return has been filed and verified. This typically takes 5–10 working days.';
     }
 
-    // Tick progress icon
+    // Tick tax progress icon
     var picon = document.getElementById('picon-tax');
     if (picon) { picon.textContent = '✓'; picon.className = 'p-icon p-icon-done'; }
 
-    // Scroll into view
-    setTimeout(function() { scrollToSection('taxResultPanel'); }, 400);
+    // Show return submitted panel with a reference number
+    setTimeout(function() {
+        var ref = 'SA-2025-' + Math.floor(Math.random() * 9000000 + 1000000);
+        var submittedPanel = document.querySelector('.return-submitted');
+        var refEl = document.getElementById('submissionRef');
+        if (refEl) refEl.textContent = 'Submission Reference: ' + ref;
+        if (submittedPanel) submittedPanel.classList.add('visible');
+
+        // Show default green vulnerability status
+        showVulnerabilityStatus('clear', null);
+
+        scrollToSection('taxResultPanel');
+    }, 600);
 }
 
 // ────────────────────────────────────────────────────────
-// Vulnerability flag
+// Vulnerability status panel
 // ────────────────────────────────────────────────────────
+function showVulnerabilityStatus(state, data) {
+    var panel = document.getElementById('vulnStatusPanel');
+    if (!panel) return;
+    panel.classList.remove('clear', 'flagged');
+    panel.classList.add('visible');
+
+    var icon  = document.getElementById('vulnStatusIcon');
+    var title = document.getElementById('vulnStatusTitle');
+    var body  = document.getElementById('vulnStatusBody');
+    var ref   = document.getElementById('vulnStatusRef');
+
+    if (state === 'clear') {
+        panel.classList.add('clear');
+        icon.textContent  = '🟢';
+        title.textContent = 'No Vulnerability Indicators Noted';
+        title.style.color = '#005a30';
+        body.textContent  = 'No vulnerability indicators were identified during this Self Assessment session. No further action required.';
+        body.style.color  = '#3d3d3d';
+        ref.style.display = 'none';
+    } else {
+        panel.classList.add('flagged');
+        icon.textContent  = '🟠';
+        title.textContent = 'Vulnerability Flag — Specialist Callback Arranged';
+        title.style.color = '#c2410c';
+        body.style.color  = '#7c2d12';
+        var reason = (data && data.reason) ? 'Reason noted: ' + data.reason + '. ' : '';
+        body.textContent  = reason + 'A specialist from HMRC\'s support team will contact Steven Rogers within 2 working days to discuss options in confidence.';
+        if (data && data.reference) {
+            ref.textContent   = 'Reference: ' + data.reference;
+            ref.style.display = 'inline-block';
+        }
+        setTimeout(function() { scrollToSection('vulnStatusPanel'); }, 400);
+    }
+}
+
 function showVulnerability(d) {
+    // Update the status panel from green to flagged amber
+    showVulnerabilityStatus('flagged', d);
+
+    // Also update the old vulnerability banner if present (backward compat)
     var banner = document.getElementById('vulnerabilityBanner');
-    if (!banner) return;
-    banner.classList.add('visible');
-
-    if (d.reason) {
-        document.getElementById('vulnReason').textContent = 'Reason noted: ' + d.reason;
+    if (banner) {
+        banner.classList.add('visible');
+        if (d.reason)    document.getElementById('vulnReason').textContent = 'Reason noted: ' + d.reason;
+        if (d.reference) document.getElementById('vulnRef').textContent    = 'Reference: ' + d.reference;
     }
-    if (d.reference) {
-        document.getElementById('vulnRef').textContent = 'Reference: ' + d.reference;
-    }
-
-    // Scroll into view after a short delay
-    setTimeout(function() { scrollToSection('vulnerabilityBanner'); }, 500);
 }
 
-// ────────────────────────────────────────────────────────
-// Signature canvas
-// ────────────────────────────────────────────────────────
-(function() {
-    var canvas  = document.getElementById('signatureCanvas');
-    var ctx     = canvas.getContext('2d');
-    var drawing = false;
-    var lx = 0, ly = 0;
-
-    ctx.strokeStyle = '#0b0c0c';
-    ctx.lineWidth   = 2;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-
-    function pos(e) {
-        var r = canvas.getBoundingClientRect();
-        var sx = canvas.width  / r.width;
-        var sy = canvas.height / r.height;
-        var src = e.touches ? e.touches[0] : e;
-        return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
-    }
-
-    canvas.addEventListener('mousedown',  function(e){ drawing=true; var p=pos(e); lx=p.x; ly=p.y; });
-    canvas.addEventListener('mousemove',  function(e){
-        if(!drawing) return;
-        var p=pos(e);
-        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
-        lx=p.x; ly=p.y;
-    });
-    canvas.addEventListener('mouseup',    function(){ drawing=false; });
-    canvas.addEventListener('mouseleave', function(){ drawing=false; });
-    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); drawing=true; var p=pos(e); lx=p.x; ly=p.y; }, {passive:false});
-    canvas.addEventListener('touchmove',  function(e){
-        e.preventDefault();
-        if(!drawing) return;
-        var p=pos(e);
-        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke();
-        lx=p.x; ly=p.y;
-    }, {passive:false});
-    canvas.addEventListener('touchend',   function(){ drawing=false; });
-})();
-
-window.clearSignature = function() {
-    var canvas = document.getElementById('signatureCanvas');
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-};
-
-window.submitDeclaration = function() {
-    var name = document.getElementById('declarationName').value.trim();
-    if (!name) {
-        alert('Please enter your full name in the Declaration section before submitting.');
-        return;
-    }
-    var canvas  = document.getElementById('signatureCanvas');
-    var isEmpty = !canvas.getContext('2d')
-        .getImageData(0, 0, canvas.width, canvas.height).data
-        .some(function(ch){ return ch !== 0; });
-    if (isEmpty) {
-        alert('Please sign the declaration before submitting.');
-        return;
-    }
-    alert('Thank you, ' + name + '.\n\nYour Self Assessment return has been submitted successfully.\nYou will receive a confirmation reference by post within 5 working days.');
-};
+// Signature canvas removed — form is completed by the AI agent
 
 // ────────────────────────────────────────────────────────
 // Init
-// ────────────────────────────────────────────────────────
-connectSSE();
-</script>
-
-</body>
-</html>
