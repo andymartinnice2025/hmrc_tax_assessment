@@ -868,7 +868,7 @@ var CITIZEN = {
     tax_year:    '2024/25',
     employer:    'Manchester City Council',
     salary:      '42,500.00',
-    paye_tax:    '8,460.00'
+    paye_tax:    '5,986.00'
 };
 
 // Demo credentials
@@ -952,7 +952,7 @@ var _origSetField = null; // will be wired after setField is defined
 // ────────────────────────────────────────────────────────
 // Config
 // ────────────────────────────────────────────────────────
-const NTFY_TOPIC    = 'hmrc-sa-form-9x4kp2';
+const NTFY_TOPIC    = 'hmrc-sa-demo2025';
 const NTFY_SSE_URL  = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
 const COGNIGY_EP    = 'https://endpoint-trial.cognigy.ai/9fcf57199d1d1674e491aed598a2c7d1e4c58cf4c7c1ea38ea949daf5626cae6';
 
@@ -1005,13 +1005,17 @@ function routePayload(data) {
 // ────────────────────────────────────────────────────────
 function setField(id, val) {
     var el = document.getElementById(id);
-    if (el && val !== undefined && val !== null && val !== '') {
-        el.value = val;
-        // Reset any pre-fill styling and apply confirmed green
-        el.style.background = '';
-        el.style.borderColor = '';
-        el.classList.add('populated');
+    if (!el || val === undefined || val === null || val === '') return;
+    // Never overwrite a confirmed (green) field with a zero/blank value.
+    // This protects against ntfy message replay and duplicate tool calls.
+    if (el.classList.contains('populated')) {
+        var num = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(num) && num === 0) return;
     }
+    el.value = val;
+    el.style.background  = '';
+    el.style.borderColor = '';
+    el.classList.add('populated');
 }
 
 function fmt(num) {
@@ -1069,24 +1073,26 @@ function fillPersonal(d) {
 }
 
 function fillEmployment(d) {
-    setField('employerName', d.employer_name);
-    setField('annualSalary', fmt(d.annual_salary));
-    setField('payeTax',      fmt(d.paye_tax_deducted));
+    // Guard: only write a field if the payload actually contains it.
+    // fmt(undefined) = '0.00' which would silently zero a pre-filled value.
+    if (d.employer_name     != null) setField('employerName', d.employer_name);
+    if (d.annual_salary     != null) setField('annualSalary', fmt(d.annual_salary));
+    if (d.paye_tax_deducted != null) setField('payeTax',      fmt(d.paye_tax_deducted));
     markDone('badge-employment', 'picon-employment');
 }
 
 function fillOtherIncome(d) {
-    setField('rentalIncome',   fmt(d.rental_income));
-    setField('bankInterest',   fmt(d.bank_interest));
-    setField('dividendIncome', fmt(d.dividend_income));
+    if (d.rental_income   != null) setField('rentalIncome',   fmt(d.rental_income));
+    if (d.bank_interest   != null) setField('bankInterest',   fmt(d.bank_interest));
+    if (d.dividend_income != null) setField('dividendIncome', fmt(d.dividend_income));
     markDone('badge-other', 'picon-other');
 }
 
 function fillReliefs(d) {
-    setField('giftAid',             fmt(d.gift_aid_donations));
-    setField('pensionContribs',     fmt(d.pension_contributions));
-    setField('otherDeductions',     fmt(d.other_deductions));
-    setField('otherDeductionsDesc', d.other_deductions_description);
+    if (d.gift_aid_donations      != null) setField('giftAid',             fmt(d.gift_aid_donations));
+    if (d.pension_contributions   != null) setField('pensionContribs',     fmt(d.pension_contributions));
+    if (d.other_deductions        != null) setField('otherDeductions',     fmt(d.other_deductions));
+    if (d.other_deductions_description != null) setField('otherDeductionsDesc', d.other_deductions_description);
     markDone('badge-reliefs', 'picon-reliefs');
 }
 
@@ -1188,25 +1194,4 @@ function showVulnerabilityStatus(state, data) {
 }
 
 function showVulnerability(d) {
-    // Update the status panel from green to flagged amber
-    showVulnerabilityStatus('flagged', d);
-
-    // Also update the old vulnerability banner if present (backward compat)
-    var banner = document.getElementById('vulnerabilityBanner');
-    if (banner) {
-        banner.classList.add('visible');
-        if (d.reason)    document.getElementById('vulnReason').textContent = 'Reason noted: ' + d.reason;
-        if (d.reference) document.getElementById('vulnRef').textContent    = 'Reference: ' + d.reference;
-    }
-}
-
-// Signature canvas removed — form is completed by the AI agent
-
-// ────────────────────────────────────────────────────────
-// Init
-// ────────────────────────────────────────────────────────
-connectSSE();
-</script>
-
-</body>
-</html>
+    // Update the status
