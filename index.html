@@ -336,9 +336,122 @@
             .main-container { grid-template-columns: 1fr; }
             .field-row { grid-template-columns: 1fr; }
         }
+
+        /* ── Login overlay ── */
+        .login-overlay {
+            position: fixed; inset: 0;
+            background: rgba(11,12,12,0.88);
+            z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .login-box {
+            background: white;
+            width: 100%; max-width: 420px;
+            margin: 20px;
+            overflow: hidden;
+        }
+        .login-header {
+            background: var(--hmrc-green);
+            padding: 24px 28px;
+            color: white;
+        }
+        .login-header h2 { font-size: 20px; margin-bottom: 4px; }
+        .login-header p  { font-size: 13px; opacity: 0.85; }
+        .login-body { padding: 28px; }
+        .login-field { margin-bottom: 18px; }
+        .login-label {
+            display: block; font-weight: bold;
+            font-size: 14px; margin-bottom: 6px;
+        }
+        .login-input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid var(--hmrc-dark);
+            font-size: 15px; font-family: inherit;
+        }
+        .login-input:focus {
+            outline: 3px solid var(--hmrc-yellow);
+            outline-offset: 0;
+        }
+        .login-error {
+            display: none;
+            background: #fde8e8; border-left: 4px solid var(--hmrc-red);
+            padding: 10px 12px; font-size: 13px;
+            color: var(--hmrc-red); margin-bottom: 16px;
+        }
+        .btn-login {
+            width: 100%; background: var(--hmrc-green);
+            color: white; border: none;
+            padding: 12px; font-size: 16px;
+            font-weight: bold; cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-login:hover { background: var(--hmrc-green-dark); }
+        .login-footer {
+            font-size: 12px; color: #505a5f;
+            text-align: center; margin-top: 16px;
+        }
+
+        /* ── Citizen profile banner ── */
+        .citizen-banner {
+            display: none;
+            background: var(--hmrc-dark);
+            color: white;
+            padding: 12px 24px;
+            align-items: center;
+            gap: 16px;
+        }
+        .citizen-avatar {
+            width: 40px; height: 40px;
+            background: var(--hmrc-green);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: bold;
+            flex-shrink: 0;
+        }
+        .citizen-info { flex: 1; }
+        .citizen-name { font-size: 15px; font-weight: bold; }
+        .citizen-meta { font-size: 12px; color: #b1b4b6; margin-top: 2px; }
+        .citizen-verified {
+            font-size: 11px; font-weight: bold;
+            background: var(--hmrc-green); color: white;
+            padding: 3px 10px; border-radius: 2px;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
+
+<!-- ═══════════════════ LOGIN OVERLAY ═══════════════════ -->
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+        <div class="login-header">
+            <h2>HMRC Self Assessment</h2>
+            <p>Sign in with your Government Gateway credentials to continue</p>
+        </div>
+        <div class="login-body">
+            <div class="login-error" id="loginError">
+                Incorrect email address or password. Please try again.
+            </div>
+            <div class="login-field">
+                <label class="login-label" for="loginEmail">Email address</label>
+                <input type="email" id="loginEmail" class="login-input"
+                       placeholder="Enter your email address"
+                       value="steven.rogers@gmail.com" autocomplete="username">
+            </div>
+            <div class="login-field">
+                <label class="login-label" for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" class="login-input"
+                       placeholder="Enter your password" autocomplete="current-password">
+            </div>
+            <button class="btn-login" onclick="attemptLogin()">Sign in</button>
+            <p class="login-footer">
+                🔒 Your connection is secure and encrypted.<br>
+                This is a demonstration service.
+            </p>
+        </div>
+    </div>
+</div>
 
 <!-- ═══════════════════ HEADER ═══════════════════ -->
 <header class="hmrc-header">
@@ -357,6 +470,16 @@
 <div class="phase-banner">
     <span class="phase-tag">DEMO</span>
     <span>This is a demonstration service — do not submit real personal data.</span>
+</div>
+
+<!-- ═══════════════════ CITIZEN BANNER ═══════════════════ -->
+<div class="citizen-banner" id="citizenBanner">
+    <div class="citizen-avatar">SR</div>
+    <div class="citizen-info">
+        <div class="citizen-name">Steven Rogers</div>
+        <div class="citizen-meta">NI: NI123456I &nbsp;·&nbsp; UTR: 1234567890 &nbsp;·&nbsp; 32 Bank Street, Manchester, M1 2HS</div>
+    </div>
+    <span class="citizen-verified">✓ Verified</span>
 </div>
 
 <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
@@ -623,6 +746,101 @@
 <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
 <script>
 // ────────────────────────────────────────────────────────
+// Citizen record (mock CRM / HMRC pre-loaded data)
+// ────────────────────────────────────────────────────────
+var CITIZEN = {
+    name:        'Steven Rogers',
+    email:       'steven.rogers@gmail.com',
+    ni_number:   'NI123456I',
+    utr:         '1234567890',
+    dob:         '15/03/1978',
+    address:     '32 Bank Street, Manchester, M1 2HS',
+    tax_year:    '2024/25',
+    employer:    'Manchester City Council',
+    salary:      '42,500.00',
+    paye_tax:    '8,460.00'
+};
+
+// Demo credentials
+var DEMO_EMAIL    = 'steven.rogers@gmail.com';
+var DEMO_PASSWORD = 'HMRC2024!';
+
+// ────────────────────────────────────────────────────────
+// Login
+// ────────────────────────────────────────────────────────
+function attemptLogin() {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass  = document.getElementById('loginPassword').value;
+    var errEl = document.getElementById('loginError');
+
+    if (email === DEMO_EMAIL && pass === DEMO_PASSWORD) {
+        errEl.style.display = 'none';
+        // Fade out overlay
+        var overlay = document.getElementById('loginOverlay');
+        overlay.style.transition = 'opacity 0.4s';
+        overlay.style.opacity = '0';
+        setTimeout(function() { overlay.style.display = 'none'; }, 400);
+        // Show citizen banner
+        var banner = document.getElementById('citizenBanner');
+        banner.style.display = 'flex';
+        // Pre-populate known fields
+        prePopulateCitizenData();
+    } else {
+        errEl.style.display = 'block';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginPassword').focus();
+    }
+}
+
+// Allow Enter key to submit login
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') attemptLogin();
+    });
+    document.getElementById('loginEmail').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+    });
+});
+
+function prePopulateCitizenData() {
+    // Personal details — mark as pre-filled (green) but not 'Complete' yet
+    // (agent will confirm on the call before submitting)
+    setPreFilled('fullName',      CITIZEN.name);
+    setPreFilled('niNumber',      CITIZEN.ni_number);
+    setPreFilled('utr',           CITIZEN.utr);
+    setPreFilled('dateOfBirth',   CITIZEN.dob);
+    setPreFilled('address',       CITIZEN.address);
+    setPreFilled('declarationName', CITIZEN.name);
+
+    // Tax year badge
+    document.getElementById('taxYearBadge').textContent = 'Tax Year: ' + CITIZEN.tax_year;
+
+    // Employment income — also pre-filled from PAYE records
+    setPreFilled('employerName',  CITIZEN.employer);
+    setPreFilled('annualSalary',  CITIZEN.salary);
+    setPreFilled('payeTax',       CITIZEN.paye_tax);
+
+    // Pulse the personal section header to show it's loaded
+    var badge = document.getElementById('badge-personal');
+    if (badge) { badge.textContent = 'Pre-loaded'; badge.className = 'section-badge badge-active'; }
+    var empBadge = document.getElementById('badge-employment');
+    if (empBadge) { empBadge.textContent = 'Pre-loaded'; empBadge.className = 'section-badge badge-active'; }
+}
+
+function setPreFilled(id, val) {
+    var el = document.getElementById(id);
+    if (!el || !val) return;
+    el.value = val;
+    // Slightly different style to show pre-loaded vs call-confirmed
+    el.style.background = '#fffbeb';
+    el.style.borderColor = '#d97706';
+}
+
+// Override setField so that when the agent confirms and submits,
+// call-confirmed fields turn green (overriding the amber pre-fill)
+var _origSetField = null; // will be wired after setField is defined
+
+// ────────────────────────────────────────────────────────
 // Config
 // ────────────────────────────────────────────────────────
 const NTFY_TOPIC    = 'hmrc-sa-form-9x4kp2';
@@ -678,6 +896,9 @@ function setField(id, val) {
     var el = document.getElementById(id);
     if (el && val !== undefined && val !== null && val !== '') {
         el.value = val;
+        // Reset any pre-fill styling and apply confirmed green
+        el.style.background = '';
+        el.style.borderColor = '';
         el.classList.add('populated');
     }
 }
@@ -803,4 +1024,31 @@ function fillReliefs(d) {
 
 window.clearSignature = function() {
     var canvas = document.getElementById('signatureCanvas');
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canv
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+};
+
+window.submitDeclaration = function() {
+    var name = document.getElementById('declarationName').value.trim();
+    if (!name) {
+        alert('Please enter your full name in the Declaration section before submitting.');
+        return;
+    }
+    var canvas  = document.getElementById('signatureCanvas');
+    var isEmpty = !canvas.getContext('2d')
+        .getImageData(0, 0, canvas.width, canvas.height).data
+        .some(function(ch){ return ch !== 0; });
+    if (isEmpty) {
+        alert('Please sign the declaration before submitting.');
+        return;
+    }
+    alert('Thank you, ' + name + '.\n\nYour Self Assessment return has been submitted successfully.\nYou will receive a confirmation reference by post within 5 working days.');
+};
+
+// ────────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────────
+connectSSE();
+</script>
+
+</body>
+</html>
