@@ -872,15 +872,15 @@ var CITIZEN = {
 };
 
 // Demo credentials
-var DEMO_EMAIL    = 'steven.rogers@gmail.com';
-var DEMO_PASSWORD = 'HMRC2024!';
+var DEMO_EMAIL    = 'steven.rogers@gmail.com'.toLowerCase();
+var DEMO_PASSWORD = 'hmrc2025';
 
 // ────────────────────────────────────────────────────────
 // Login
 // ────────────────────────────────────────────────────────
 function attemptLogin() {
-    var email = document.getElementById('loginEmail').value.trim();
-    var pass  = document.getElementById('loginPassword').value;
+    var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    var pass  = document.getElementById('loginPassword').value.trim();
     var errEl = document.getElementById('loginError');
 
     if (email === DEMO_EMAIL && pass === DEMO_PASSWORD) {
@@ -1194,4 +1194,25 @@ function showVulnerabilityStatus(state, data) {
 }
 
 function showVulnerability(d) {
-    // Update the status
+    // Update the status panel from green to flagged amber
+    showVulnerabilityStatus('flagged', d);
+
+    // Also update the old vulnerability banner if present (backward compat)
+    var banner = document.getElementById('vulnerabilityBanner');
+    if (banner) {
+        banner.classList.add('visible');
+        if (d.reason)    document.getElementById('vulnReason').textContent = 'Reason noted: ' + d.reason;
+        if (d.reference) document.getElementById('vulnRef').textContent    = 'Reference: ' + d.reference;
+    }
+}
+
+// Signature canvas removed — form is completed by the AI agent
+
+// ────────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────────
+connectSSE();
+</script>
+
+</body>
+</html>
